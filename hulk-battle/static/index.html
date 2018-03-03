@@ -1,0 +1,18 @@
+<html>
+    <head>
+        <title>A Multiplayer Game</title>
+        <style>
+            canvas {
+                width: 95%;
+                height: 95%;
+                border: 5px solid black;
+            }
+        </style>
+        <script src="/socket.io/socket.io.js"></script>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+        <img id="hulk" src="/static/sprite_sheets/hulk.gif" style="display:none"/>
+    </body>
+    <script src="/static/game.js"></script>
+</html>
