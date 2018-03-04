@@ -1,24 +1,18 @@
 var socket = io();
-// socket.on('message', function(data) {
-//     console.log(data);
-// });
 var canvas = document.getElementById('canvas');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 var context = canvas.getContext('2d');
 socket.on('state', function(players) {
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = 'green';
+  var img = document.getElementById("hulk");
   for (var id in players) {
     var player = players[id];
-    context.beginPath();
-    var img = document.getElementById("hulk");
-    console.log(player.cropX);
-    context.drawImage(img, player.cropX, player.cropY, player.cropW, player.cropH, player.x, player.y, 160, 200);
-    context.fill();
+    let playerXScale = player.playerXScale;
+    context.scale(playerXScale, 1);
+    context.drawImage(img, player.cropX, player.cropY, player.cropW, player.cropH, player.x * playerXScale, player.y, 160, 200);
   }
 });
-socket.emit('window size', [window.innerWidth - 100, window.innerHeight - 100]);
 var movement = {
     left: false,
     up: false,
@@ -64,7 +58,7 @@ document.addEventListener('keyup', function(event) {
         break;
   }
 });
-socket.emit('new player');
+socket.emit('new player', [window.innerWidth - 100, window.innerHeight - 100]);
 setInterval(function() {
     socket.emit('movement', movement)
 }, 1000/60);
