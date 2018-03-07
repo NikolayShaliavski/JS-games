@@ -77,7 +77,11 @@ module.exports = {
     },
     move_player: function(data, socketID) {
         var player = players[socketID] || {};
-
+        let hasCollision = checkPlayerCollisions(player, socketID);
+        let canMove = true;
+        if (hasCollision) {
+            canMove = false;
+        }
         let now = Date.now();
         let diff = now - lastUpdateHit;
         if (diff > 100) {
@@ -110,10 +114,10 @@ module.exports = {
             player.x -= player.cropW;
             player.x += player.cropW;
             if (player.playerXScale == 1) {
-                if (player.x > 20) {
+                if (player.x > 20 ) {
                     player.x -= speed;
                 }
-            } else if (player.playerXScale == -1) {
+            } else if (player.playerXScale == -1 && canMove) {
                 if (player.x > 170) {
                     player.x -= speed;
                 }
@@ -134,14 +138,21 @@ module.exports = {
             }
             player.x -= player.cropW;
             player.x += player.cropW;
-            if (player.x < player.windowWidth) {
-                player.x += speed;
+            if (player.playerXScale == 1 && canMove) {
+                if (player.x < player.windowWidth) {
+                    player.x += speed;
+                }
+            } else if (player.playerXScale == -1) {
+                if (player.x < player.windowWidth) {
+                    player.x += speed;
+                }
             }
         }
         if (data.down) {
             //player.y += speed;
         }
         updatePlayerCropCoordinates(player);
+        //player.x += player.cropW;
     },
     land_players: function() {
         for(var key in players) {
@@ -166,4 +177,30 @@ function updatePlayerCropCoordinates(player) {
         player.cropY = playerWalkingYCoordinates["y"];
         player.cropH = playerWalkingYCoordinates["h"];
     }
+}
+function checkPlayerCollisions(player, socketID) {
+    let hasCollision = false;
+    for(let key in players) {
+        if (key == socketID) {
+            continue;
+        }
+        if (!players.hasOwnProperty(key)) {
+            continue;
+        }
+        let other = players[key];
+        if (player.playerXScale == 1) {//left player
+            let leftPlayer = player.x + player.cropW * 2;
+            let rightPlayer = other.x - other.cropW * 2;
+            if (leftPlayer >= rightPlayer) {
+                hasCollision = true;
+            }
+        } else if (player.playerXScale == -1) {//right player
+            var rightPlayer = player.x - player.cropW * 2;
+            let leftPlayer = other.x + other.cropW * 2;
+            if (rightPlayer <= leftPlayer) {
+                hasCollision = true;
+            }
+        }
+    }
+    return hasCollision;
 }

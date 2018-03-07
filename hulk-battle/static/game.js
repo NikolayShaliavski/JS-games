@@ -11,7 +11,17 @@ socket.on('state', function(players) {
     let playerXScale = player.playerXScale;
     context.scale(playerXScale, 1);
     context.drawImage(img, player.cropX, player.cropY, player.cropW, player.cropH, player.x * playerXScale, player.y, 160, 200);
-  }
+
+//     context.beginPath();
+//     if (playerXScale == 1) {
+//         context.arc(player.x + player.cropW * 2, player.y, 10,0,2*Math.PI);
+//     } else {
+//         context.arc(player.x - player.cropW * 2, player.y, 10,0,2*Math.PI);
+//     }
+    
+//     context.fill();
+
+   }
 });
 var movement = {
     left: false,
