@@ -1,8 +1,10 @@
-const floor = 370;
+//const floor = 370;
+const floorOffset = 100;
 const speed = 5;
+const jumpHeight = 350;
 
 var players = {};
-var playerXCropSize = {
+var playerWalkingXCoordinates = {
   1: {"x": 0, "w": 80},
   2: {"x": 81, "w": 67},
   3: {"x": 149, "w": 92},
@@ -10,11 +12,21 @@ var playerXCropSize = {
   5: {"x": 313, "w": 73},
   6: {"x": 384, "w": 94}
 };
-var playerYCropSize = {
+var playerHitXCoordinates = {
+    1: {"x": 0, "w": 80},
+    2: {"x": 80, "w": 75},
+    3: {"x": 155, "w": 90},
+    4: {"x": 245, "w": 110}
+  };
+var playerWalkingYCoordinates = {
   "y": 285,
   "h": 100
 };
-var index = 1;
+var playerHitYCoordinates = {
+  "y": 198,
+  "h": 85
+};
+var lastUpdateHit = Date.now();
 var lastUpdateSprite = Date.now();
 var lastMoveHandle = Date.now();
 
@@ -26,26 +38,34 @@ module.exports = {
         if (count == 0) {
             players[socketID] = {
                 x: 20,
-                y: floor,
-                cropX: playerXCropSize[1]["x"],
-                cropW: playerXCropSize[1]["w"],
-                cropY: playerYCropSize["y"],
-                cropH: playerYCropSize["h"],
+                y: windowHeight - floorOffset,
+                floor: windowHeight - floorOffset,
+                cropX: playerWalkingXCoordinates[1]["x"],
+                cropW: playerWalkingXCoordinates[1]["w"],
+                cropY: playerWalkingYCoordinates["y"],
+                cropH: playerWalkingYCoordinates["h"],
                 playerXScale: 1,
                 windowWidth: windowWidth,
-                windowHeight: windowHeight
+                windowHeight: windowHeight,
+                playerHit: false,
+                indexWalk: 1,
+                indexHit: 0
             };
         } else if (count == 1) {
             players[socketID] = {
                 x: windowWidth,
-                y: floor,
-                cropX: playerXCropSize[1]["x"],
-                cropW: playerXCropSize[1]["w"],
-                cropY: playerYCropSize["y"],
-                cropH: playerYCropSize["h"],
+                y: windowHeight - floorOffset,
+                floor: windowHeight - floorOffset,
+                cropX: playerWalkingXCoordinates[1]["x"],
+                cropW: playerWalkingXCoordinates[1]["w"],
+                cropY: playerWalkingYCoordinates["y"],
+                cropH: playerWalkingYCoordinates["h"],
                 playerXScale: -1,
                 windowWidth: windowWidth,
-                windowHeight: windowHeight
+                windowHeight: windowHeight,
+                playerHit: false,
+                indexWalk: 1,
+                indexHit: 0
             };
         }
     },
@@ -57,24 +77,37 @@ module.exports = {
     },
     move_player: function(data, socketID) {
         var player = players[socketID] || {};
+
+        let now = Date.now();
+        let diff = now - lastUpdateHit;
+        if (diff > 100) {
+            player.indexHit++;
+            if (player.indexHit >= Object.keys(playerHitXCoordinates).length + 1) {
+                player.indexHit = 0;
+                player.playerHit = false;
+            }
+            lastUpdateHit = now;
+        }
+
         if (data.jump) {
-            if (player.y >= floor) {
-                player.y -= 250;
+            if (player.y >= player.floor) {
+                player.y -= jumpHeight;
             }
         }
+        if (data.hit) {
+            player.playerHit = true;
+        }
         if (data.left) {
-            var now = Date.now();
-            var diff = now - lastUpdateSprite;
+            now = Date.now();
+            diff = now - lastUpdateSprite;
             if (diff > 100) {
-                index--;
-                if (index <= 1) {
-                    index = Object.keys(playerXCropSize).length;
+                player.indexWalk--;
+                if (player.indexWalk <= 1) {
+                    player.indexWalk = Object.keys(playerWalkingXCoordinates).length;
                 }
                 lastUpdateSprite = now;
             }
             player.x -= player.cropW;
-            player.cropX = playerXCropSize[index]["x"];
-            player.cropW = playerXCropSize[index]["w"];
             player.x += player.cropW;
             if (player.playerXScale == 1) {
                 if (player.x > 20) {
@@ -90,18 +123,16 @@ module.exports = {
             //player.y -= speed;
         }
         if (data.right) {
-            var now = Date.now();
-            var diff = now - lastUpdateSprite;
+            now = Date.now();
+            diff = now - lastUpdateSprite;
             if (diff > 100) {
-                index++;
-                if (index >= Object.keys(playerXCropSize).length + 1) {
-                    index = 1;
+                player.indexWalk++;
+                if (player.indexWalk >= Object.keys(playerWalkingXCoordinates).length + 1) {
+                    player.indexWalk = 1;
                 }
                 lastUpdateSprite = now;
             }
             player.x -= player.cropW;
-            player.cropX = playerXCropSize[index]["x"];
-            player.cropW = playerXCropSize[index]["w"];
             player.x += player.cropW;
             if (player.x < player.windowWidth) {
                 player.x += speed;
@@ -110,15 +141,29 @@ module.exports = {
         if (data.down) {
             //player.y += speed;
         }
+        updatePlayerCropCoordinates(player);
     },
     land_players: function() {
         for(var key in players) {
             let player = players[key];
-            if (player.y >= floor) {
-                player.y = floor;
-            } else if (player.y < floor) {
+            if (player.y >= player.floor) {
+                player.y = player.floor;
+            } else if (player.y < player.floor) {
                 player.y += 10;
             }
         }
+    }
+}
+function updatePlayerCropCoordinates(player) {
+    if (player.playerHit && player.indexHit > 0) {
+        player.cropX = playerHitXCoordinates[player.indexHit]["x"];
+        player.cropW = playerHitXCoordinates[player.indexHit]["w"];
+        player.cropY = playerHitYCoordinates["y"];
+        player.cropH = playerHitYCoordinates["h"];
+    } else if (player.indexWalk > 0) {
+        player.cropX = playerWalkingXCoordinates[player.indexWalk]["x"];
+        player.cropW = playerWalkingXCoordinates[player.indexWalk]["w"];
+        player.cropY = playerWalkingYCoordinates["y"];
+        player.cropH = playerWalkingYCoordinates["h"];
     }
 }

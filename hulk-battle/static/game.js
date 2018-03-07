@@ -18,7 +18,8 @@ var movement = {
     up: false,
     right: false,
     down: false,
-    jump: false
+    jump: false,
+    hit: false
 };
 document.addEventListener('keydown', function(event) {
     switch(event.keyCode) {
@@ -37,26 +38,32 @@ document.addEventListener('keydown', function(event) {
         case 32: // Space
             movement.jump = true;
             break;
+        case 77: // M
+            movement.hit = true;
+            break;
     }
 });
 document.addEventListener('keyup', function(event) {
-  switch (event.keyCode) {
-    case 37: //left arrow
-      movement.left = false;
-      break;
-    case 38: //up arrow
-      movement.up = false;
-      break;
-    case 39: //right arrow
-      movement.right = false;
-      break;
-    case 40: //down arrow
-      movement.down = false;
-      break;
-    case 32: // Space
-        movement.jump = false;
-        break;
-  }
+    switch (event.keyCode) {
+        case 37: //left arrow
+            movement.left = false;
+            break;
+        case 38: //up arrow
+            movement.up = false;
+            break;
+        case 39: //right arrow
+            movement.right = false;
+            break;
+        case 40: //down arrow
+            movement.down = false;
+            break;
+        case 32: // Space
+            movement.jump = false;
+            break;
+        case 77: // M
+            movement.hit = false;
+            break;
+    }
 });
 socket.emit('new player', [window.innerWidth - 100, window.innerHeight - 100]);
 setInterval(function() {
